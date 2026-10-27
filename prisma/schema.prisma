@@ -1,0 +1,60 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("STUDENT") // STUDENT | ADMIN | VERIFIER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OpportunityScan {
+  id                 String   @id @default(cuid())
+  title              String?
+  company            String?
+  sourceType         String   // URL | SCREENSHOT | TEXT
+  rawInput           String
+  riskScore          Int      // 0 - 100 score
+  riskLevel          String   // LOW_RISK | NEEDS_VERIFICATION | HIGH_RISK
+  flags              String   // JSON array of strings
+  findings           String   // JSON string of categorized findings
+  recommendedActions String   // JSON array of action items
+  domainInfo         String?  // JSON domain metadata
+  createdAt          DateTime @default(now())
+}
+
+model CommunityReport {
+  id           String   @id @default(cuid())
+  title        String
+  company      String
+  scamType     String   // UPFRONT_FEE | PHISHING | FAKE_OFFER | PAY_TO_WORK | TELEGRAM_WHATSAPP | OTHER
+  sourceUrl    String?
+  contactInfo  String?  // Recruiter email, WhatsApp number, Telegram handle
+  description  String
+  evidenceUrl  String?
+  status       String   @default("VERIFIED_SCAM") // VERIFIED_SCAM | UNDER_REVIEW | DISPUTED
+  upvotes      Int      @default(0)
+  downvotes    Int      @default(0)
+  reporterRole String?  @default("Student")
+  createdAt    DateTime @default(now())
+  votes        Vote[]
+}
+
+model Vote {
+  id             String          @id @default(cuid())
+  reportId       String
+  report         CommunityReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  voteType       String          // UPVOTE | DOWNVOTE
+  userIdentifier String          // Anonymous user session ID or IP hash
+  createdAt      DateTime        @default(now())
+
+  @@unique([reportId, userIdentifier])
+}
